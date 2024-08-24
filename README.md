@@ -1,54 +1,58 @@
-# STX NFT Marketplace
+Overview
 
-A decentralized NFT (Non-Fungible Token) marketplace built on the Stacks blockchain using Clarity smart contracts. This project enables users to mint, list, buy, and manage NFTs in a decentralized manner.
+This repository contains the source code for an NFT Marketplace Contract developed in Clarity, a smart contract language for the Stacks blockchain. The contract enables users to mint, list, buy, and manage NFTs (Non-Fungible Tokens) within the marketplace. The following functionalities are supported:
 
-## Features
+Minting NFTs: Only the contract owner can mint new NFTs.
 
-- Mint new NFTs (restricted to contract owner)
-- Create listings for NFTs
-- Update listing prices
-- Cancel listings
-- Buy NFTs
-- View all listings and individual listing details
-- Check NFT ownership
-- Event system for tracking marketplace activities
+Creating Listings: Token owners can create listings to sell their NFTs.
 
-## Smart Contract
+Updating Listings: Sellers can update the price of their active listings.
 
-The main smart contract `nft-marketplace.clar` implements the following functionality:
+Cancelling Listings: Sellers can cancel their listings, removing them from the marketplace.
 
-- NFT token definition
-- Listing management (create, update, cancel)
-- NFT purchases
-- Minting new NFTs
-- Utility functions for querying listings and NFT ownership
+Buying NFTs: Users can purchase listed NFTs, transferring ownership and funds accordingly.
 
-## Getting Started
+Contract Functions
+Constants
+contract-owner: The principal that deployed the contract, identified by tx-sender.
+err-owner-only: Error code u100 for actions restricted to the contract owner.
+err-not-token-owner: Error code u101 for actions restricted to the NFT owner.
+err-listing-not-found: Error code u102 when a listing does not exist.
+err-price-zero: Error code u103 for invalid (zero) pricing.
+err-invalid-token-id: Error code u104 for invalid token IDs.
+err-invalid-principal: Error code u105 for invalid principals.
+err-invalid-recipient: Error code u106 for invalid recipients.
 
-### Prerequisites
+Data Variables
+next-listing-id: Tracks the ID of the next listing to be created.
+next-token-id: Tracks the ID of the next NFT to be minted.
 
-- [Clarinet](https://github.com/hirosystems/clarinet): A Clarity runtime packaged as a command line tool.
+NFT Management
+mint-nft(recipient): Allows the contract owner to mint a new NFT and assign it to a recipient.
+get-nft-owner(token-id): Fetches the owner of a specific NFT.
 
-### Installation
+Listing Management
+create-listing(token-id, price): Creates a new listing for a specified NFT with a sale price.
+cancel-listing(listing-id): Cancels an active listing, removing it from the marketplace.
+update-listing-price(listing-id, new-price): Updates the price of an existing listing.
+buy-nft(listing-id): Allows a user to purchase an NFT from an active listing.
 
-1. Clone the repository:
+Read-Only Functions
+get-next-listing-id(): Retrieves the next available listing ID.
+get-next-token-id(): Retrieves the next available token ID.
+get-listing(listing-id): Fetches the details of a specific listing.
+get-total-listings(): Returns the total number of listings created.
 
-2. Install Clarinet by following the instructions in the [Clarinet repository](https://github.com/hirosystems/clarinet).
+Error Handling
+The contract uses a set of predefined error codes to handle various scenarios such as unauthorized access, invalid token operations, and incorrect pricing. These are crucial for ensuring the contract operates securely and predictably.
 
-### Usage
+How to Use
+Deploy the Contract: The contract owner deploys the contract on the Stacks blockchain.
 
-1. Test the contract using Clarinet:
+Minting NFTs: The contract owner mints NFTs and assigns them to specified recipients.
 
-2. Deploy the contract to the Stacks testnet or mainnet using the Stacks CLI or Clarinet.
+Creating Listings: NFT owners can create listings for their tokens, setting a sale price.
 
-## Contract Functions
+Buying NFTs: Users can purchase NFTs by sending the required amount of STX to the seller.
 
-- `create-listing`: Create a new NFT listing
-- `cancel-listing`: Cancel an existing listing
-- `update-listing-price`: Update the price of a listing
-- `buy-nft`: Purchase an NFT from a listing
-- `mint-nft`: Mint a new NFT (contract owner only)
-- `get-listing`: Get details of a specific listing
-- `get-all-listings`: Get all current listings
-- `get-nft-owner`: Check the owner of an NFT
-- `is-token-listed`: Check if a token is currently listed.
+Managing Listings: Sellers can update or cancel their listings as needed.
