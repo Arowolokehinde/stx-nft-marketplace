@@ -73,6 +73,23 @@
   )
 )
 
+;; Function to pause all listings (only contract owner)
+(define-public (pause-listings)
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (var-set listings-paused true)
+    (ok true)
+  )
+)
+
+;; Function to resume all listings (only contract owner)
+(define-public (resume-listings)
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (var-set listings-paused false)
+    (ok true)
+  )
+)
 
 ;; Function to update the price of a listing
 (define-public (update-listing-price (listing-id uint) (new-price uint))
