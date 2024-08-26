@@ -7,8 +7,8 @@
 (define-constant err-listing-not-found (err u102))
 (define-constant err-price-zero (err u103))
 (define-constant err-invalid-token-id (err u104))
-(define-constant err-invalid-principal (err u105))
-(define-constant err-invalid-recipient (err u106))
+(define-constant err-invalid-recipient (err u105))
+(define-constant err-invalid-principal (err u106))
 
 ;; Data variables
 (define-data-var next-listing-id uint u0)
@@ -116,13 +116,49 @@
     )
     (asserts! (is-eq tx-sender contract-owner) err-owner-only)
     (asserts! (not (is-eq recipient 'SP000000000000000000002Q6VF78)) err-invalid-recipient)
-    (try! (nft-mint? nft-token token-id recipient)) 
+    (try! (nft-mint? nft-token token-id recipient))
     (var-set next-token-id (+ token-id u1))
     (ok token-id)
   )
 )
 
-;; Add a function to get NFT owner
+;; Function to count active listings
+(define-read-only (count-active-listings)
+  (let
+    (
+      (max-id (var-get next-listing-id)) ;; Get the maximum ID
+      (total u0)                        ;; Initialize the total count
+      (limit u1000)                     ;; Define a limit for the number of listings to check
+    )
+    (begin
+      ;; Manually handle a fixed number of listing IDs
+      (if (<= max-id limit)
+        (let
+          (
+            (count (if (is-some (map-get? listings u0))
+                      (if (is-eq tx-sender (get seller (unwrap! (map-get? listings u0) err-listing-not-found)))
+                        (+ total u1)
+                        total)
+                      total))
+          )
+          (ok count)
+        )
+        (let
+          (
+            (count (if (is-some (map-get? listings u0))
+                      (if (is-eq tx-sender (get seller (unwrap! (map-get? listings u0) err-listing-not-found)))
+                        (+ total u1)
+                        total)
+                      total))
+          )
+          (ok count)
+        )
+      )
+    )
+  )
+)
+
+;; Read-only function to get NFT owner
 (define-read-only (get-nft-owner (token-id uint))
   (nft-get-owner? nft-token token-id)
 )
