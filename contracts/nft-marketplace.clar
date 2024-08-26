@@ -73,21 +73,6 @@
   )
 )
 
-;; ;; Function to cancel a listing
-;; (define-public (cancel-listing (listing-id uint))
-;;   (let
-;;     (
-;;       (listing (unwrap! (map-get? listings listing-id) err-listing-not-found))
-;;       (owner (unwrap! (nft-get-owner? nft-token (get token-id listing)) err-invalid-token-id))
-;;     )
-;;     (asserts! (is-eq tx-sender owner) err-not-token-owner)
-;;     (ok (map-delete listings listing-id))
-;;   )
-;; )
-
-
-
-
 
 ;; Function to update the price of a listing
 (define-public (update-listing-price (listing-id uint) (new-price uint))
@@ -185,11 +170,28 @@
 )
 
 
+;; Instead, add a new map to keep track of active listings count
+(define-map active-listings-count principal uint)
+
+;; Function to increment active listings count
+(define-private (increment-active-listings (seller principal))
+  (let ((current-count (default-to u0 (map-get? active-listings-count seller))))
+    (map-set active-listings-count seller (+ current-count u1))
+  )
+)
+
+;; Function to decrement active listings count
+(define-private (decrement-active-listings (seller principal))
+  (let ((current-count (default-to u0 (map-get? active-listings-count seller))))
+    (map-set active-listings-count seller (- current-count u1))
+  )
+)
 
 
-
-
-
+;; New read-only function to get active listings count for a seller
+(define-read-only (get-active-listings-count (seller principal))
+  (default-to u0 (map-get? active-listings-count seller))
+)
 ;; Read-only function to get NFT owner
 (define-read-only (get-nft-owner (token-id uint))
   (nft-get-owner? nft-token token-id)
