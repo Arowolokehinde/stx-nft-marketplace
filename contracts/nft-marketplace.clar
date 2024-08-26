@@ -9,21 +9,27 @@
 (define-constant err-invalid-token-id (err u104))
 (define-constant err-invalid-recipient (err u105))
 (define-constant err-invalid-principal (err u106))
+(define-constant err-listing-not-active (err u107))
 
 ;; Data variables
 (define-data-var next-listing-id uint u0)
 (define-data-var next-token-id uint u0)
+(define-data-var listings-paused bool false)
 
 ;; Define the NFT
 (define-non-fungible-token nft-token uint)
 
-;; Map to store listing information
+;; Define listing status enum
+(define-data-var listing-status (string-ascii 20) "active")
+
+;; Data structure for listings
 (define-map listings
   uint
   {
     token-id: uint,
     price: uint,
-    seller: principal
+    seller: principal,
+    status: (string-ascii 20)
   }
 )
 
@@ -46,23 +52,42 @@
     )
     (asserts! (is-eq tx-sender owner) err-not-token-owner)
     (asserts! (> price u0) err-price-zero)
-    (map-set listings listing-id {token-id: token-id, price: price, seller: tx-sender})
+    (asserts! (not (var-get listings-paused)) err-listing-not-active)
+    (map-set listings listing-id {token-id: token-id, price: price, seller: tx-sender, status: "active"})
     (var-set next-listing-id (+ listing-id u1))
     (ok listing-id)
   )
 )
 
-;; Function to cancel a listing
-(define-public (cancel-listing (listing-id uint))
+;; Function to close a listing
+(define-public (close-listing (listing-id uint))
   (let
     (
       (listing (unwrap! (map-get? listings listing-id) err-listing-not-found))
       (owner (unwrap! (nft-get-owner? nft-token (get token-id listing)) err-invalid-token-id))
     )
     (asserts! (is-eq tx-sender owner) err-not-token-owner)
-    (ok (map-delete listings listing-id))
+    (asserts! (is-eq (get status listing) "active") err-listing-not-active)
+    (ok (map-set listings listing-id 
+      (merge listing {status: "closed"})))
   )
 )
+
+;; ;; Function to cancel a listing
+;; (define-public (cancel-listing (listing-id uint))
+;;   (let
+;;     (
+;;       (listing (unwrap! (map-get? listings listing-id) err-listing-not-found))
+;;       (owner (unwrap! (nft-get-owner? nft-token (get token-id listing)) err-invalid-token-id))
+;;     )
+;;     (asserts! (is-eq tx-sender owner) err-not-token-owner)
+;;     (ok (map-delete listings listing-id))
+;;   )
+;; )
+
+
+
+
 
 ;; Function to update the price of a listing
 (define-public (update-listing-price (listing-id uint) (new-price uint))
@@ -73,7 +98,7 @@
     )
     (asserts! (is-eq tx-sender owner) err-not-token-owner)
     (asserts! (> new-price u0) err-price-zero)
-    (asserts! (< listing-id (var-get next-listing-id)) err-listing-not-found)
+    (asserts! (is-eq (get status listing) "active") err-listing-not-active)
     (ok (map-set listings listing-id 
       (merge listing {price: new-price})))
   )
@@ -96,9 +121,10 @@
     )
     (asserts! (is-some (nft-get-owner? nft-token token-id)) err-invalid-token-id)
     (asserts! (is-eq (unwrap! (nft-get-owner? nft-token token-id) err-invalid-token-id) seller) err-not-token-owner)
+    (asserts! (is-eq (get status listing) "active") err-listing-not-active)
     (try! (stx-transfer? price buyer seller))
     (try! (nft-transfer? nft-token token-id seller buyer))
-    (map-delete listings listing-id)
+    (map-set listings listing-id (merge listing {status: "sold"}))
     (ok true)
   )
 )
@@ -157,6 +183,12 @@
     )
   )
 )
+
+
+
+
+
+
 
 ;; Read-only function to get NFT owner
 (define-read-only (get-nft-owner (token-id uint))
